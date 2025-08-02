@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        .game-container {
+            background-color: #0c0c1e;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h1 {
+            color: #00ff99;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(0, 255, 153, 0.6);
+        }
+
+        canvas {
+            background-color: #0a0a1a;
+            border-radius: 15px;
+            border: 2px solid #00ff99;
+            display: block;
+            width: 100%;
+            height: 300px; /* Fixed height for canvas */
+            margin: 0 auto;
+            box-shadow: inset 0 0 15px rgba(0, 255, 153, 0.3);
+        }
+
+        .multiplier-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            margin: 20px 0;
+            min-height: 1.2em; /* Ensure consistent height */
+        }
+
+        .game-status {
+            font-size: 1.5em;
+            color: #ff6b6b;
+            margin-top: -10px;
+            min-height: 1.2em; /* Ensure consistent height */
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .input-group label {
+            font-size: 1.1em;
+            color: #a0a0a0;
+        }
+
+        input[type="number"] {
+            background-color: #1a1a2e;
+            border: 1px solid #00ff99;
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 10px 15px;
+            font-size: 1.1em;
+            width: 120px;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 255, 153, 0.3);
+            -moz-appearance: textfield; /* Firefox */
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+
+        button {
+            background: linear-gradient(45deg, #00ff99, #00b377);
+            border: none;
+            border-radius: 10px;
+            color: #0c0c1e;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 255, 153, 0.4);
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #00e689, #009966);
+            box-shadow: 0 8px 20px rgba(0, 255, 153, 0.6);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #333;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .cash-out-button {
+            background: linear-gradient(45deg, #ffcc00, #e6b800);
+            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
+        }
+
+        .cash-out-button:hover {
+            background: linear-gradient(45deg, #e6b800, #cc9900);
+            box-shadow: 0 8px 20px rgba(255, 204, 0, 0.6);
+        }
+
+        .amount-display {
+            font-size: 1.3em;
+            color: #00ff99;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .message-box {
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #fff;
+            font-size: 1.1em;
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            max-width: 80%;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                gap: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .multiplier-display {
+                font-size: 3em;
+            }
+            .game-status {
+                font-size: 1.2em;
+            }
+            .input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            input[type="number"] {
+                width: 100%;
+                max-width: 150px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 1.1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 15px;
+                gap: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .multiplier-display {
+                font-size: 2.5em;
+            }
+            .game-status {
+                font-size: 1em;
+            }
+            input[type="number"] {
+                padding: 8px 12px;
+                font-size: 1em;
+            }
+            button {
+                padding: 8px 15px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Crash Game</h1>
+        <canvas id="gameCanvas"></canvas>
+        <div id="multiplierDisplay" class="multiplier-display">1.00x</div>
+        <div id="gameStatus" class="game-status">Place your bet!</div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="betAmount">Bet:</label>
+                <input type="number" id="betAmount" value="10" min="1" step="1">
+            </div>
+            <button id="placeBetBtn">Place Bet</button>
+            <button id="cashOutBtn" class="cash-out-button" disabled>Cash Out</button>
+        </div>
+
+        <div id="balanceDisplay" class="balance-display">Balance: $1000.00</div>
+    </div>
+
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        // --- Game Variables ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const multiplierDisplay = document.getElementById('multiplierDisplay');
+        const gameStatus = document.getElementById('gameStatus');
+        const betAmountInput = document.getElementById('betAmount');
+        const placeBetBtn = document.getElementById('placeBetBtn');
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const messageBox = document.getElementById('messageBox');
+
+        let amount = 1000; // Starting balance
+        let currentMultiplier = 1.00;
+        let betAmount = 0;
+        let isGameRunning = false;
+        let hasBetPlaced = false;
+        let hasCashedOut = false;
+        let crashPoint = 0;
+        let animationFrameId;
+        let startTime;
+
+        // --- Audio Setup (Tone.js) ---
+        const synth = new Tone.Synth().toDestination();
+        const crashNoise = new Tone.NoiseSynth().toDestination();
+        const cashOutSound = new Tone.PolySynth().toDestination();
+
+        function playBetSound() {
+            synth.triggerAttackRelease("C4", "8n");
+        }
+
+        function playCrashSound() {
+            crashNoise.triggerAttackRelease("8n", Tone.now(), 0.5);
+        }
+
+        function playCashOutSound() {
+            cashOutSound.triggerAttackRelease(["E5", "G5", "C6"], "8n");
+        }
+
+        // --- Canvas Drawing Functions ---
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawGame(); // Redraw content after resize
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(0, 255, 153, 0.1)';
+            ctx.lineWidth = 1;
+
+            // Horizontal lines
+            for (let i = 0; i <= 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * canvas.height / 10);
+                ctx.lineTo(canvas.width, i * canvas.height / 10);
+                ctx.stroke();
+            }
+
+            // Vertical lines
+            for (let i = 0; i <= 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * canvas.width / 10, 0);
+                ctx.lineTo(i * canvas.width / 10, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw the ascending line
+            if (isGameRunning || hasCashedOut || (hasBetPlaced && !isGameRunning)) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height); // Start from bottom-left
+                const elapsed = (Date.now() - startTime) / 1000; // Time in seconds
+                const x = Math.min(canvas.width, elapsed * canvas.width / 5); // X progresses over ~5 seconds
+                const y = canvas.height - (currentMultiplier - 1) * (canvas.height / 10); // Y based on multiplier, scaled
+
+                // Ensure y doesn't go below 0 or above canvas height
+                const clampedY = Math.max(0, Math.min(canvas.height, y));
+
+                ctx.lineTo(x, clampedY);
+                ctx.strokeStyle = '#00ff99';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = '#00ff99';
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset shadow
+            }
+        }
+
+        // --- Game Logic ---
+        function showMessage(message, duration = 2000) {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, duration);
+        }
+
+        function updateBalance(amount) {
+            balance += amount;
+            balanceDisplay.textContent = `Balance: $${balance.toFixed(2)}`;
+        }
+
+        function resetGame() {
+            currentMultiplier = 1.00;
+            isGameRunning = false;
+            hasBetPlaced = false;
+            hasCashedOut = false;
+            betAmount = 0;
+            multiplierDisplay.textContent = '1.00x';
+            gameStatus.textContent = 'Place your bet!';
+            placeBetBtn.disabled = false;
+            cashOutBtn.disabled = true;
+            betAmountInput.disabled = false;
+            drawGame(); // Clear the line from the canvas
+        }
+
+        function startGame() {
+            if (betAmount <= 0) {
+                showMessage('Please enter a valid bet amount.');
+                return;
+            }
+            if (balance < betAmount) {
+                showMessage('Insufficient balance!');
+                return;
+            }
+
+            updateBalance(-betAmount); // Deduct bet from balance
+            playBetSound();
+
+            isGameRunning = true;
+            hasBetPlaced = true;
+            hasCashedOut = false;
+            placeBetBtn.disabled = true;
+            betAmountInput.disabled = true;
+            cashOutBtn.disabled = false;
+            gameStatus.textContent = 'Game in progress...';
+
+            // Generate a random crash point (e.g., between 1.5x and 10x)
+            // Use a logarithmic distribution for more frequent low crashes and rarer high crashes
+            crashPoint = Math.max(1.01, -Math.log(Math.random()) * 2 + 1); // Adjust the '2' for distribution spread
+
+            startTime = Date.now();
+            animateGame();
+        }
+
+        function animateGame() {
+            if (!isGameRunning) {
+                return;
+            }
+
+            const elapsed = (Date.now() - startTime) / 1000; // Time in seconds
+            // Calculate multiplier based on a function of time, e.g., exponential growth
+            currentMultiplier = 1 + elapsed * 0.5 + Math.pow(elapsed, 2) * 0.05; // Adjust growth rate
+
+            multiplierDisplay.textContent = `${currentMultiplier.toFixed(2)}x`;
+            drawGame();
+
+            if (currentMultiplier >= crashPoint) {
+                crashGame();
+                return;
+            }
+
+            animationFrameId = requestAnimationFrame(animateGame);
+        }
+
+        function cashOut() {
+            if (!isGameRunning || hasCashedOut) {
+                return;
+            }
+            cancelAnimationFrame(animationFrameId); // Stop animation
+            isGameRunning = false;
+            hasCashedOut = true;
+            cashOutBtn.disabled = true;
+
+            const winnings = betAmount * currentMultiplier;
+            updateBalance(winnings);
+            playCashOutSound();
+            gameStatus.textContent = `Cashed out at ${currentMultiplier.toFixed(2)}x! Won $${winnings.toFixed(2)}`;
+            showMessage(`You cashed out and won $${winnings.toFixed(2)}!`);
+
+            setTimeout(resetGame, 3000); // Reset after 3 seconds
+        }
+
+        function crashGame() {
+            cancelAnimationFrame(animationFrameId); // Stop animation
+            isGameRunning = false;
+            cashOutBtn.disabled = true;
+            playCrashSound();
+            gameStatus.textContent = `CRASHED at ${currentMultiplier.toFixed(2)}x! You lost $${betAmount.toFixed(2)}`;
+            showMessage(`Game crashed at ${currentMultiplier.toFixed(2)}x!`);
+
+            setTimeout(resetGame, 3000); // Reset after 3 seconds
+        }
+
+        // --- Event Listeners ---
+        placeBetBtn.addEventListener('click', () => {
+            betAmount = parseFloat(betAmountInput.value);
+            if (isNaN(betAmount) || betAmount <= 0) {
+                showMessage('Please enter a valid bet amount.');
+                return;
+            }
+            startGame();
+        });
+
+        cashOutBtn.addEventListener('click', cashOut);
+
+        // Initial setup
+        window.onload = function() {
+            resizeCanvas();
+            updateBalance(0); // Display initial balance
+            drawGame(); // Draw initial canvas state (grid)
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+
+    </script>
+</body>
+</html>
+
